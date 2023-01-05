@@ -1,14 +1,17 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	discoverhcp "github.com/hashicorp/consul/agent/hcp/discover"
-	discover "github.com/hashicorp/go-discover"
+	"github.com/hashicorp/go-discover"
 	discoverk8s "github.com/hashicorp/go-discover/provider/k8s"
 	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-netaddrs"
+
+	discoverhcp "github.com/hashicorp/consul/agent/hcp/discover"
 
 	"github.com/hashicorp/consul/lib"
 )
@@ -153,6 +156,35 @@ func retryJoinAddrs(disco *discover.Discover, variant, cluster string, retryJoin
 						logger.Info("Discovered servers",
 							"cluster", cluster,
 							"servers", strings.Join(servers, " "),
+						)
+					}
+				}
+			}
+		case strings.Contains(addr, "exec="):
+			discovered, err := netaddrs.IPAddrs(context.Background(), addr, logger)
+			if err != nil {
+				if logger != nil {
+					logger.Error("Cannot discover address", "address", addr, "error", err)
+				}
+			} else {
+				servers := ""
+				for _, ip := range discovered {
+					server := ip.String()
+					servers += server + " "
+					addrs = append(addrs, server)
+				}
+				servers = strings.TrimSpace(servers)
+
+				if logger != nil {
+					if variant == retryJoinMeshGatewayVariant {
+						logger.Info("Discovered mesh gateways",
+							"cluster", cluster,
+							"mesh_gateways", servers,
+						)
+					} else {
+						logger.Info("Discovered servers",
+							"cluster", cluster,
+							"servers", servers,
 						)
 					}
 				}

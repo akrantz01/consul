@@ -46,6 +46,10 @@ func TestAgentRetryJoinAddrs(t *testing.T) {
 			[]string{"192.168.0.12", "provider=aws region=eu-west-1 tag_key=consul tag_value=tag access_key_id=a secret_access_key=a"},
 			[]string{"192.168.0.12"},
 		},
+		{"handles exec elements",
+			[]string{"192.168.0.12", "exec=echo 192.168.0.13 192.168.0.14"},
+			[]string{"192.168.0.12", "192.168.0.13", "192.168.0.14"},
+		},
 	}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
